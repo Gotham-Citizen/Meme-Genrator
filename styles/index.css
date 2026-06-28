@@ -61,6 +61,7 @@ main {
     font-family: "Karla", sans-serif;
 }
 
+/* Meme container - must be relative for absolute positioning */
 .meme {
     position: relative;
     display: flex;
@@ -73,12 +74,13 @@ main {
     max-width: 100%;
     height: auto;
     border-radius: 3px;
+    display: block;
 }
 
-.meme span {
+/* Draggable text styling - REMOVE the top/bottom positioning */
+.draggable {
     position: absolute;
     text-align: center;
-    margin-block: 15px;
     padding-inline: 5px;
     font-family: impact, sans-serif;
     font-size: 2rem;
@@ -95,12 +97,28 @@ main {
         0 -2px 0 #000,
         -2px 0 0 #000,
         2px 2px 5px #000;
+    user-select: none;
+    pointer-events: auto;
+    white-space: nowrap;
+    padding: 4px 8px;
+    /* Remove default top/bottom margins */
+    margin-block: 0;
 }
 
+.draggable:hover {
+    opacity: 0.7; /* This makes it translucent - adjust the value as needed */
+}
+
+.draggable:active {
+    cursor: grabbing !important;
+}
+
+/* These are now handled by inline styles via React */
+/* .bottom and .top classes are kept for any additional styling */
 .bottom {
-    bottom: 0;
+    /* Position is now controlled by React state */
 }
 
 .top {
-    top: 0;
+    /* Position is now controlled by React state */
 }
