@@ -32,7 +32,13 @@ export default function Main() {
 
     function getMemeImage() {
         if (allMemes.length === 0) return
-        const index = Math.floor(Math.random() * allMemes.length)
+        let index
+        let currentUrl = meme.imageUrl
+
+        do {
+            index = Math.floor(Math.random() * allMemes.length)
+        } while (allMemes[index].url === currentUrl)
+
         setMeme(prevMeme => ({
             ...prevMeme,
             imageUrl: allMemes[index].url
