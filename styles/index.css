@@ -231,3 +231,34 @@ main {
 .draggable:active {
     cursor: grabbing !important;
 }
+
+.export-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+
+.export-controls button{
+    background: linear-gradient(90.41deg, #711F8D 1.14%, #A818DA 100%);
+}
+
+.export-btn {
+    flex: 1;
+    min-height: 40px;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    min-height: 40px;
+    font-family: "Karla", sans-serif;
+    font-weight: bold;
+}
+
+.export-btn:hover {
+   background: linear-gradient(90.41deg, #5f1a78 1.14%, #8f14ba 100%);
+}
+
+.export-btn:last-child:hover {
+    background: linear-gradient(90.41deg, #5f1a78 1.14%, #8f14ba 100%);
+}
