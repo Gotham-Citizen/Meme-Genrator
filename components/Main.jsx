@@ -232,6 +232,158 @@ export default function Main() {
             } 
         }
     }
+        
+    async function loadAndDrawImage(imageUrl, container, drawCallback) {
+        // 1. 下载图片
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        
+        // 2. 创建图片对象
+        const img = new Image()
+        const objectUrl = URL.createObjectURL(blob)
+        
+        return new Promise((resolve, reject) => {
+            img.onload = () => {
+                try {
+                    // 3. 获取容器尺寸
+                    const rect = container.getBoundingClientRect()
+                    
+                    // 4. 创建画布
+                    const canvas = document.createElement('canvas')
+                    const scaleFactor = 2
+                    canvas.width = rect.width * scaleFactor
+                    canvas.height = rect.height * scaleFactor
+                    
+                    const ctx = canvas.getContext('2d')
+                    ctx.scale(scaleFactor, scaleFactor)
+                    
+                    // 5. 绘制图片
+                    ctx.drawImage(img, 0, 0, rect.width, rect.height)
+                    
+                    // 6. 绘制文字
+                    drawTexts(ctx, rect)
+                    
+                    // 7. 清理临时链接
+                    URL.revokeObjectURL(objectUrl)
+                    
+                    // 8. 执行回调，传入画布
+                    resolve({ canvas, ctx, rect })
+                } catch (error) {
+                    reject(error)
+                }
+            }
+            
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl)
+                reject(new Error('Failed to load image'))
+            }
+            
+            img.src = objectUrl
+        })
+    }
+    
+    // 导出为 DataURL（在新窗口预览）
+    async function exportAsDataURL() {
+        const memeElement = memeRef.current
+        if (!memeElement) return
+
+        try {
+            const { canvas } = await loadAndDrawImage(meme.imageUrl, memeElement)
+            
+            // 导出为 dataURL
+            const dataURL = canvas.toDataURL('image/png')
+            
+            // 在新窗口预览
+            const win = window.open()
+            if (win) {
+                win.document.write(`<img src="${dataURL}" alt="Exported Meme" style="max-width: 100%;" />`)
+                win.document.title = 'Exported Meme'
+            }
+        } catch (error) {
+            console.error('Export error:', error)
+            alert('Failed to preview meme. Please try again.')
+        }
+    }
+
+    // Export as  PNG（下载文件）
+    async function exportAsPNG() {
+        const memeElement = memeRef.current
+        if (!memeElement) return
+
+        try {
+            const { canvas } = await loadAndDrawImage(meme.imageUrl, memeElement)
+            
+            // 下载
+            downloadCanvas(canvas, 'meme.png')
+        } catch (error) {
+            console.error('Export error:', error)
+            alert('Failed to export meme. Please try again.')
+        }
+    }
+
+    function drawTexts(ctx, rect) {
+        function drawTextWithShadow(text, x, y, fontSize, color = 'white') {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `${fontSize * 16}px impact, sans-serif`;
+
+            // matches .draggable's letter-spacing: 1px (if supported by the browser)
+            if ('letterSpacing' in ctx) {
+                ctx.letterSpacing = '1px';
+            }
+
+            // Matches CSS text-shadow exactly, in the same order:
+            // 2px 2px 0, -2px -2px 0, 2px -2px 0, -2px 2px 0,
+            // 0 2px 0, 2px 0 0, 0 -2px 0, -2px 0 0, 2px 2px 5px
+            const shadows = [
+                [2, 2, 0], [-2, -2, 0], [2, -2, 0], [-2, 2, 0],
+                [0, 2, 0], [2, 0, 0], [0, -2, 0], [-2, 0, 0],
+                [2, 2, 5], // final blurred layer, drawn on top like in CSS
+            ];
+
+            ctx.shadowColor = 'black';
+            shadows.forEach(([offsetX, offsetY, blur]) => {
+                ctx.shadowOffsetX = offsetX;
+                ctx.shadowOffsetY = offsetY;
+                ctx.shadowBlur = blur;
+                ctx.fillStyle = 'black';
+                ctx.fillText(text, x, y);
+            });
+
+            // reset shadow state before drawing the actual fill text
+            ctx.shadowColor = 'transparent';
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = color;
+            ctx.fillText(text, x, y);
+        }
+
+        drawTextWithShadow(
+            meme.topText.toUpperCase(),
+            (meme.topTextX / 100) * rect.width,
+            (meme.topTextY / 100) * rect.height,
+            meme.fontSize
+        );
+
+        drawTextWithShadow(
+            meme.bottomText.toUpperCase(),
+            (meme.bottomTextX / 100) * rect.width,
+            (meme.bottomTextY / 100) * rect.height,
+            meme.fontSize
+        );
+
+        customTexts.forEach(customText => {
+            drawTextWithShadow(
+                customText.text.toUpperCase(),
+                (customText.x / 100) * rect.width,
+                (customText.y / 100) * rect.height,
+                customText.fontSize || meme.fontSize
+            );
+        });
+    }
+
 
     if (error) return <main><p className="error">Failed to load memes: {error}</p></main>
     if (loading) return <main><p className="loading">Loading...</p></main>
@@ -382,6 +534,15 @@ export default function Main() {
                         {customText.text}
                     </span>
                 ))}
+            </div>
+            {/* Export Buttons */}
+            <div className="export-controls">
+                <button onClick={exportAsPNG} className="export-btn">
+                    ⬇️ Download PNG
+                </button>
+                <button onClick={exportAsDataURL} className="export-btn">
+                    👁️ Preview Export
+                </button>
             </div>
         </main>
     )
